@@ -10,6 +10,7 @@
 // * 2013-01-15	-	0.5	-	added round start hook, still need cvar hook
 // * 2013-01-18	-	0.6	-	fix for timer handle
 // * 2013-01-18	-	0.7	-	Add cvar hooks, remove unneeded version cvar
+// * 2013-01-18	-	0.7b	-	debug msgs
 //	------------------------------------------------------------------------------------
 
 
@@ -17,7 +18,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.7"
+#define PLUGIN_VERSION	"0.7b"
 
 
 
@@ -54,14 +55,17 @@ public OnPluginStart()
 	{
 		HookConVarChange(g_hTeamTalk, Command_Alltalk);
 	}
+	PrintToServer("[alltalkstatus.smx] OnPluginStart: Initialization");
 			
 }
 
 
 public Command_Alltalk(Handle:cvar, const String:oldVal[], const String:newVal[])
 {
+	PrintToServer("[alltalkstatus.smx] Command_Alltalk: Checking for Existing Timer");
 	if (g_hTimer != INVALID_HANDLE)
 	{
+		PrintToServer("[alltalkstatus.smx] Command_Alltalk: Killing Existing Timer");
 		KillTimer(g_hTimer);
 		g_hTimer = INVALID_HANDLE;
 	}
@@ -88,6 +92,13 @@ public Action:Command_Say(client, const String:command[], args)
 	
 	if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
 	{
+		PrintToServer("[alltalkstatus.smx] ShowStatus: Checking for Existing Timer");
+		if (g_hTimer != INVALID_HANDLE)
+		{
+			PrintToServer("[alltalkstatus.smx] ShowStatus: Killing Existing Timer");
+			KillTimer(g_hTimer);
+			g_hTimer = INVALID_HANDLE;
+		}
 		ShowStatus();
 	}
 		
@@ -129,7 +140,7 @@ public Action:ShowStatus()
 // func wrapper to deal w/timer handle
 public Action:CallShowStatus(Handle:Timer)
 {
-
+	PrintToServer("[alltalkstatus.smx] CallShowStatus: Invalidating Timer Handle");
 	g_hTimer = INVALID_HANDLE;
 	ShowStatus();
 
@@ -139,22 +150,27 @@ public Action:CallShowStatus(Handle:Timer)
 // The round start hook gets run here
 public Action:Hook_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
-    if (g_hTimer != INVALID_HANDLE)
-    {
-        KillTimer(g_hTimer);
-        g_hTimer = INVALID_HANDLE;
-    }
-    g_hTimer = CreateTimer(30.0, CallShowStatus);
-    return Plugin_Continue;
+	PrintToServer("[alltalkstatus.smx] RoundStart: Checking for Existing Timer");
+	if (g_hTimer != INVALID_HANDLE)
+	{
+		PrintToServer("[alltalkstatus.smx] RoundStart: Killing Existing Timer");
+		KillTimer(g_hTimer);
+		g_hTimer = INVALID_HANDLE;
+	}
+	PrintToServer("[alltalkstatus.smx] RoundStart: Creating 30s Timer");
+	g_hTimer = CreateTimer(30.0, CallShowStatus);
+	return Plugin_Continue;
 }
 
 
 // Cleanup timer on map end
 public OnMapEnd()
 {
-    if (g_hTimer != INVALID_HANDLE)
-    {
-        KillTimer(g_hTimer);
-        g_hTimer = INVALID_HANDLE;
-    }
+	PrintToServer("[alltalkstatus.smx] MapEnd: Checking for Existing Timer");
+	if (g_hTimer != INVALID_HANDLE)
+	{
+		PrintToServer("[alltalkstatus.smx] MapEnd: Killing Existing Timer");
+		KillTimer(g_hTimer);
+		g_hTimer = INVALID_HANDLE;
+	}
 }
