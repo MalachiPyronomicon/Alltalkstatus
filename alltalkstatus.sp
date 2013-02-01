@@ -2,7 +2,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.2"
+#define PLUGIN_VERSION	"0.3"
 
 
 new Handle:g_hAlltalkStatusEnabled = INVALID_HANDLE;
@@ -60,11 +60,22 @@ public Action:SayHook(client, args)
 			{
 				if(GetConVarInt(g_hAllTalk))
 				{
-					PrintToChatAll("\x04AllTalk is ON");
+					PrintToChatAll("\x04AllTalk is \x01ON");
 				}
 				else
 				{
-					PrintToChatAll("\x04AllTalk is OFF");
+					PrintToChatAll("\x04AllTalk is \x01OFF");
+				}
+			}
+			if (g_hTeamTalk != INVALID_HANDLE)
+			{
+				if(GetConVarInt(g_hTeamTalk))
+				{
+					PrintToChatAll("\x04TeamTalk is \x01ON");
+				}
+				else
+				{
+					PrintToChatAll("\x04TeamTalk is \x01OFF");
 				}
 			}
 		}
