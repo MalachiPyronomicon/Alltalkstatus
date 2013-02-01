@@ -9,6 +9,7 @@
 // * Changelog (date/version/description):
 // * 2013-01-15	-	0.5	-	added round start hook, still need cvar hook
 // * 2013-01-18	-	0.6	-	fix for timer handle
+// * 2013-01-18	-	0.7	-	Add cvar hooks, remove unneeded version cvar
 //	------------------------------------------------------------------------------------
 
 
@@ -16,10 +17,10 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.6"
+#define PLUGIN_VERSION	"0.7"
 
 
-new Handle:g_hAlltalkStatusEnabled = INVALID_HANDLE;
+
 new Handle:g_hAllTalk = INVALID_HANDLE;
 new Handle:g_hTeamTalk = INVALID_HANDLE;
 new Handle:g_hTimer = INVALID_HANDLE; 
@@ -37,43 +38,57 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	CreateConVar("alltalkstatus_version", PLUGIN_VERSION, "Alltalk Status Version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
-	
-	g_hAlltalkStatusEnabled		= CreateConVar("alltalkstatus_enabled", "1", "turns alltalk status on and off, 1=on ,0=off");
-	
-	RegConsoleCmd("say", SayHook);
-	RegConsoleCmd("say_team", SayHook);
+	AddCommandListener(Command_Say, "say");
+	AddCommandListener(Command_Say, "say_team");
 	
 	HookEvent("teamplay_round_start", Hook_RoundStart);
 	
 	g_hAllTalk = FindConVar("sv_alltalk");
+	if ( g_hAllTalk != INVALID_HANDLE )
+	{
+		HookConVarChange(g_hAllTalk, Command_Alltalk);
+	}
+			
 	g_hTeamTalk = FindConVar("tf_teamtalk");
+	if ( g_hTeamTalk != INVALID_HANDLE )
+	{
+		HookConVarChange(g_hTeamTalk, Command_Alltalk);
+	}
+			
 }
 
 
-public Action:SayHook(client, args)
+public Command_Alltalk(Handle:cvar, const String:oldVal[], const String:newVal[])
+{
+	if (g_hTimer != INVALID_HANDLE)
+	{
+		KillTimer(g_hTimer);
+		g_hTimer = INVALID_HANDLE;
+	}
+	ShowStatus();
+}
+
+
+public Action:Command_Say(client, const String:command[], args)
 {	
-	if(GetConVarInt(g_hAlltalkStatusEnabled) == 1)
-	{   
-		new String:text[192];
-		GetCmdArgString(text, sizeof(text));
+	new String:text[192];
+	GetCmdArgString(text, sizeof(text));
+	
+	new startidx = 0;
+	if (text[0] == '"')
+	{
+		startidx = 1;
 		
-		new startidx = 0;
-		if (text[0] == '"')
+		new len = strlen(text);
+		if (text[len-1] == '"')
 		{
-			startidx = 1;
-			
-			new len = strlen(text);
-			if (text[len-1] == '"')
-			{
-				text[len-1] = '\0';
-			}
+			text[len-1] = '\0';
 		}
-		
-		if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
-		{
-			ShowStatus();
-		}
+	}
+	
+	if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
+	{
+		ShowStatus();
 	}
 		
 	return Plugin_Continue;
