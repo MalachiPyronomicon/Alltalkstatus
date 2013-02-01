@@ -2,11 +2,12 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.1"
+#define PLUGIN_VERSION	"0.2"
 
 
-new Handle:AlltalkStatusEnabled = INVALID_HANDLE;
-
+new Handle:g_hAlltalkStatusEnabled = INVALID_HANDLE;
+new Handle:g_hAllTalk = INVALID_HANDLE;
+new Handle:g_hTeamTalk = INVALID_HANDLE;
 
 public Plugin:myinfo = 
 {
@@ -17,21 +18,26 @@ public Plugin:myinfo =
 	url = "www.necrophix.com"
 }
 
+//  sv_alltalk
+// tf_teamtalk
 
 public OnPluginStart()
 {
-	CreateConVar("alltalkstatus_version", PLUGIN_VERSION, "Alltalk Status Version", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+	CreateConVar("alltalkstatus_version", PLUGIN_VERSION, "Alltalk Status Version", FCVAR_REPLICATED|FCVAR_NOTIFY);
 	
-	AlltalkStatusEnabled		= CreateConVar("alltalkstatus_enabled", "1", "turns alltalk status on and off, 1=on ,0=off");
+	g_hAlltalkStatusEnabled		= CreateConVar("alltalkstatus_enabled", "1", "turns alltalk status on and off, 1=on ,0=off");
 	
 	RegConsoleCmd("say", SayHook);
 	RegConsoleCmd("say_team", SayHook);
+	
+	g_hAllTalk = FindConVar("sv_alltalk");
+	g_hTeamTalk = FindConVar("tf_teamtalk");
 }
 
 
 public Action:SayHook(client, args)
 {
-	if(GetConVarInt(AlltalkStatusEnabled) == 1)
+	if(GetConVarInt(g_hAlltalkStatusEnabled) == 1)
 	{   
 		new String:text[192];
 		GetCmdArgString(text, sizeof(text));
@@ -50,8 +56,17 @@ public Action:SayHook(client, args)
 		
 		if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
 		{
-//			PrintToChatAll("\x04Alltalk %s, Teamtalk %s", status1, status2);
-			PrintToChatAll("\x04test");
+			if (g_hAllTalk != INVALID_HANDLE)
+			{
+				if(GetConVarInt(g_hAllTalk))
+				{
+					PrintToChatAll("\x04AllTalk is ON");
+				}
+				else
+				{
+					PrintToChatAll("\x04AllTalk is OFF");
+				}
+			}
 		}
 	}
 	return Plugin_Continue;
