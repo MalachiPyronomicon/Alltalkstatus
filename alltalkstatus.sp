@@ -1,13 +1,14 @@
 //	------------------------------------------------------------------------------------
 //	Filename:		alltalkstatus.sp
 //	Author:			Malachi
-//	Version:		0.5 
+//	Version:		(see PLUGIN_VERSION)
 //	Description:
 //					Plugin displays the current status of alltalk and teamtalk in 
 //					response to chat commands ("!alltalk") and at the beginning of a round.
 //
 // * Changelog (date/version/description):
 // * 2013-01-15	-	0.5	-	added round start hook, still need cvar hook
+// * 2013-01-18	-	0.6	-	fix for timer handle
 //	------------------------------------------------------------------------------------
 
 
@@ -15,12 +16,13 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.5"
+#define PLUGIN_VERSION	"0.6"
 
 
 new Handle:g_hAlltalkStatusEnabled = INVALID_HANDLE;
 new Handle:g_hAllTalk = INVALID_HANDLE;
 new Handle:g_hTeamTalk = INVALID_HANDLE;
+new Handle:g_hTimer = INVALID_HANDLE; 
 
 
 public Plugin:myinfo = 
@@ -70,7 +72,7 @@ public Action:SayHook(client, args)
 		
 		if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
 		{
-			ShowStatus(INVALID_HANDLE);
+			ShowStatus();
 		}
 	}
 		
@@ -79,7 +81,7 @@ public Action:SayHook(client, args)
 
 
 
-public Action:ShowStatus(Handle:Timer)
+public Action:ShowStatus()
 {
 	new String:message[64] = "";
 	
@@ -106,16 +108,38 @@ public Action:ShowStatus(Handle:Timer)
 			PrintToChatAll("\x04AllTalk is \x01OFF%s", message);
 		}
 	}
-	
-	return Plugin_Continue;
 }
 
 
+// func wrapper to deal w/timer handle
+public Action:CallShowStatus(Handle:Timer)
+{
+
+	g_hTimer = INVALID_HANDLE;
+	ShowStatus();
+
+}
+
+
+// The round start hook gets run here
 public Action:Hook_RoundStart(Handle:event, const String:name[], bool:dontBroadcast)
 {
-	new Handle:hTimer = INVALID_HANDLE; 
+    if (g_hTimer != INVALID_HANDLE)
+    {
+        KillTimer(g_hTimer);
+        g_hTimer = INVALID_HANDLE;
+    }
+    g_hTimer = CreateTimer(30.0, CallShowStatus);
+    return Plugin_Continue;
+}
 
-	// Wait 10 seconds
-	hTimer = CreateTimer(30.0, ShowStatus, 0, TIMER_FLAG_NO_MAPCHANGE | TIMER_HNDL_CLOSE);
-	return Plugin_Continue;	// Do we need this?
+
+// Cleanup timer on map end
+public OnMapEnd()
+{
+    if (g_hTimer != INVALID_HANDLE)
+    {
+        KillTimer(g_hTimer);
+        g_hTimer = INVALID_HANDLE;
+    }
 }
