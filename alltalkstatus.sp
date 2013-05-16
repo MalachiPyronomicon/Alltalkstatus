@@ -12,6 +12,7 @@
 // * 2013-01-18	-	0.7		-	Add cvar hooks, remove unneeded version cvar
 // * 2013-01-18	-	0.7b	-	debug msgs
 // * 2013-01-18	-	0.8		-	remove debug msgs
+// * 2013-01-18	-	0.8.1	-	change description from Teamtalk to Deadtalk, change to registered command.
 //	------------------------------------------------------------------------------------
 
 
@@ -19,7 +20,7 @@
 
 #pragma semicolon 1
 
-#define PLUGIN_VERSION	"0.8"
+#define PLUGIN_VERSION	"0.8.1"
 
 
 
@@ -40,8 +41,9 @@ public Plugin:myinfo =
 
 public OnPluginStart()
 {
-	AddCommandListener(Command_Say, "say");
-	AddCommandListener(Command_Say, "say_team");
+//	AddCommandListener(Command_Say, "say");
+//	AddCommandListener(Command_Say, "say_team");
+	RegConsoleCmd("sm_alltalk", Command_Say, "Display the status of alltalk/deadtalk to players.");
 	
 	HookEvent("teamplay_round_start", Hook_RoundStart);
 	
@@ -74,36 +76,20 @@ public Command_Alltalk(Handle:cvar, const String:oldVal[], const String:newVal[]
 }
 
 
-public Action:Command_Say(client, const String:command[], args)
+public Action:Command_Say(client, args)
 {	
-	new String:text[192];
-	GetCmdArgString(text, sizeof(text));
 	
-	new startidx = 0;
-	if (text[0] == '"')
+//	PrintToServer("[alltalkstatus.smx] ShowStatus: Checking for Existing Timer");
+	if (g_hTimer != INVALID_HANDLE)
 	{
-		startidx = 1;
-		
-		new len = strlen(text);
-		if (text[len-1] == '"')
-		{
-			text[len-1] = '\0';
-		}
+//		PrintToServer("[alltalkstatus.smx] ShowStatus: Killing Existing Timer");
+		KillTimer(g_hTimer);
+		g_hTimer = INVALID_HANDLE;
 	}
 	
-	if(StrEqual(text[startidx], "!alltalk") || StrEqual(text[startidx], "/alltalk"))
-	{
-//		PrintToServer("[alltalkstatus.smx] ShowStatus: Checking for Existing Timer");
-		if (g_hTimer != INVALID_HANDLE)
-		{
-//			PrintToServer("[alltalkstatus.smx] ShowStatus: Killing Existing Timer");
-			KillTimer(g_hTimer);
-			g_hTimer = INVALID_HANDLE;
-		}
-		ShowStatus();
-	}
+	ShowStatus();
 		
-	return Plugin_Continue;
+	return Plugin_Handled;
 }
 
 
@@ -116,11 +102,11 @@ public Action:ShowStatus()
 	{
 		if(GetConVarInt(g_hTeamTalk))
 		{
-			Format(message, sizeof(message), "  \x04TeamTalk is \x01ON");
+			Format(message, sizeof(message), "  \x04DeadTalk is \x01ON");
 		}
 		else
 		{
-			Format(message, sizeof(message), "  \x04TeamTalk is \x01OFF");
+			Format(message, sizeof(message), "  \x04DeadTalk is \x01OFF");
 		}
 	}
 	
